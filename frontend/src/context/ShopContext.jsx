@@ -2,37 +2,59 @@ import { createContext, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { translations } from "../translations";
 
 export const ShopContext = createContext();
 
 const ShopContextProvider = (props) => {
-  const currency = "$";
-  const delivery_fee = 10;
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const currency = "DZD ";
+  const [delivery_fee, setDelivery_fee] = useState(0);
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || "";
   const [search, setSearch] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [cartItems, setCartItems] = useState({});
   const [products, setProducts] = useState([]);
-  const [token, setToken] = useState("");
+  const [token, setToken] = useState(
+    localStorage.getItem("token") ? localStorage.getItem("token") : ""
+  );
+  
+  const [language, setLanguage] = useState(() => {
+    const saved = localStorage.getItem("language");
+    if (saved && translations[saved]) {
+      return saved;
+    }
+    return "ar";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("language", language);
+    document.documentElement.dir = language === "ar" ? "rtl" : "ltr";
+    document.documentElement.lang = language;
+  }, [language]);
+
+  const t = (key) => {
+    return (
+      translations[language]?.[key] ||
+      translations["ar"]?.[key] ||
+      translations["fr"]?.[key] ||
+      translations["en"]?.[key] ||
+      key
+    );
+  };
   const navigate = useNavigate();
 
-  const addToCart = async (itemId, size) => {
-    if (!size) {
-      toast.error("Select Product Size");
-      return;
-    }
-
+  const addToCart = async (itemId, size = "Default", quantity = 1) => {
     let cartData = structuredClone(cartItems);
 
     if (cartData[itemId]) {
       if (cartData[itemId][size]) {
-        cartData[itemId][size] += 1;
+        cartData[itemId][size] += quantity;
       } else {
-        cartData[itemId][size] = 1;
+        cartData[itemId][size] = quantity;
       }
     } else {
       cartData[itemId] = {};
-      cartData[itemId][size] = 1;
+      cartData[itemId][size] = quantity;
     }
     setCartItems(cartData);
 
@@ -40,13 +62,16 @@ const ShopContextProvider = (props) => {
       try {
         await axios.post(
           backendUrl + "/api/cart/add",
-          { itemId, size },
+          { itemId, size, quantity },
           { headers: { token } }
         );
+        toast.success("Added to cart");
       } catch (error) {
         console.log(error);
         toast.error(error.message);
       }
+    } else {
+      toast.success("Added to cart");
     }
   };
 
@@ -136,6 +161,9 @@ const ShopContextProvider = (props) => {
 
   useEffect(() => {
     getProductsData();
+    // Poll for product updates every 10 seconds so admin changes reflect automatically
+    const intervalId = setInterval(getProductsData, 10000);
+    return () => clearInterval(intervalId);
   }, []);
 
   useEffect(() => {
@@ -149,6 +177,7 @@ const ShopContextProvider = (props) => {
     products,
     currency,
     delivery_fee,
+    setDelivery_fee,
     search,
     setSearch,
     showSearch,
@@ -163,6 +192,9 @@ const ShopContextProvider = (props) => {
     backendUrl,
     setToken,
     token,
+    language,
+    setLanguage,
+    t
   };
 
   return (

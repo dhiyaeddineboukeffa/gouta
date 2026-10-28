@@ -4,21 +4,17 @@ import Title from "./Title";
 import ProductItem from "./ProductItem";
 
 const LatestCollection = () => {
-  const { products } = useContext(ShopContext);
+  const { products, t } = useContext(ShopContext);
   const [latestProducts, setLatestProducts] = useState([]);
 
   useEffect(() => {
-    setLatestProducts(products.slice(0, 10));
+    setLatestProducts(products);
   }, [products]);
 
   return (
     <div className="my-10">
       <div className="text-center py-8 text-3xl">
-        <Title text1={"LATEST"} text2={"COLLECTIONS"} />
-        <p className="w-3/4 m-auto text-xs sm:text-sm md:text-base text-gray-600">
-          Lorem Ipsum is simply dummy text of the printing and typesetting
-          industry. Lorem Ipsum has been the.
-        </p>
+        <Title text1={t('AVAILABLE')} text2={t('PRODUCTS')} />
       </div>
 
       {/* Rendering Products */}
@@ -29,7 +25,7 @@ const LatestCollection = () => {
             id={item._id}
             image={item.image}
             name={item.name}
-            price={item.price}
+            price={item.price} stockQuantity={item.stockQuantity}
           />
         ))}
       </div>

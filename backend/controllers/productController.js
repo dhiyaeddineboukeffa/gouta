@@ -8,9 +8,7 @@ const addProduct = async (req, res) => {
       name,
       description,
       price,
-      category,
-      subCategory,
-      sizes,
+      stockQuantity,
       bestseller,
     } = req.body;
 
@@ -35,11 +33,9 @@ const addProduct = async (req, res) => {
     const productData = {
       name,
       description,
-      category,
       price: Number(price),
-      subCategory,
+      stockQuantity: Number(stockQuantity) || 0,
       bestseller: bestseller === "true" ? true : false,
-      sizes: JSON.parse(sizes),
       image: imagesUrl,
       date: Date.now(),
     };
@@ -90,4 +86,36 @@ const singleProduct = async (req, res) => {
   }
 };
 
-export { addProduct, ListProduct, removeProduct, singleProduct };
+// function for updating product stock
+const updateStock = async (req, res) => {
+  try {
+    const { productId, stockQuantity } = req.body;
+    await productModel.findByIdAndUpdate(productId, { stockQuantity: Number(stockQuantity) });
+    res.json({ success: true, message: "Stock Updated" });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+// function for editing a product entirely
+const editProduct = async (req, res) => {
+  try {
+    const { productId, name, description, price, stockQuantity } = req.body;
+    
+    // We only update text fields and stock. Images can stay as they are for simplicity.
+    await productModel.findByIdAndUpdate(productId, { 
+      name, 
+      description, 
+      price: Number(price), 
+      stockQuantity: Number(stockQuantity) 
+    });
+    
+    res.json({ success: true, message: "Product Edited Successfully" });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+export { addProduct, ListProduct, removeProduct, singleProduct, updateStock, editProduct };

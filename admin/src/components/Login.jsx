@@ -4,14 +4,14 @@ import { backendUrl } from "../App";
 import { toast } from "react-toastify";
 
 const Login = ({ setToken }) => {
-  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
 
   const onSubmitHandler = async (e) => {
     try {
       e.preventDefault();
       const response = await axios.post(backendUrl + "/api/user/admin", {
-        email,
+        phone,
         password,
       });
       if (response.data.success) {
@@ -32,14 +32,14 @@ const Login = ({ setToken }) => {
         <form onSubmit={onSubmitHandler}>
           <div className="mb-3 min-w-72">
             <p className="text-sm font-medium text-gray-700 mb-2">
-              Email Address
+              Phone Number
             </p>
             <input
-              onChange={(e) => setEmail(e.target.value)}
-              value={email}
+              onChange={(e) => setPhone(e.target.value)}
+              value={phone}
               className="rounded-md w-full px-3 py-2 border border-gray-300 outline-none"
-              type="email"
-              placeholder="your@email.com"
+              type="tel"
+              placeholder="0556096972"
               required
             />
           </div>

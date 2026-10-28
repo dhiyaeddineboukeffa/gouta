@@ -1,12 +1,13 @@
 import React, { useContext, useEffect, useState } from "react";
 import { ShopContext } from "../context/ShopContext";
-import Title from "../components/Title";
+import { Link } from "react-router-dom";
 import axios from "axios";
 
 const Orders = () => {
-  const { backendUrl, token, currency } = useContext(ShopContext);
+  const { backendUrl, token, currency, t } = useContext(ShopContext);
 
-  const [orderData, setorderData] = useState([]);
+  const [activeOrders, setActiveOrders] = useState([]);
+  const [archivedOrders, setArchivedOrders] = useState([]);
 
   const loadorderData = async () => {
     try {
@@ -20,75 +21,96 @@ const Orders = () => {
         { headers: { token } }
       );
       if (response.data.success) {
-        let allOrdersItem = [];
-        response.data.orders.map((order) => {
-          order.items.map((item) => {
-            item["status"] = order.status;
-            item["payment"] = order.payment;
-            item["paymentMethod"] = order.paymentMethod;
-            item["date"] = order.date;
-            allOrdersItem.push(item);
-          });
+        let active = [];
+        let archived = [];
+
+        response.data.orders.reverse().forEach((order) => {
+          if (["Shipped", "Completed", "Cancelled"].includes(order.status)) {
+            archived.push(order);
+          } else {
+            active.push(order);
+          }
         });
-        setorderData(allOrdersItem.reverse());
+
+        setActiveOrders(active);
+        setArchivedOrders(archived);
       }
-    } catch (error) {}
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   useEffect(() => {
     loadorderData();
   }, [token]);
 
+  const OrderCard = ({ order }) => (
+    <div className="py-5 border-b border-gray-200 text-gray-700 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex flex-col gap-2">
+        <div>
+          <p className="text-sm text-gray-500 font-semibold mb-1">
+            {t('ORDER_DATE')}: {new Date(order.date).toLocaleString()}
+          </p>
+          <p className="text-lg font-bold text-[#1E3A8A]">
+            {order.items.length} {order.items.length > 1 ? t('ITEMS') : t('ITEM')} - {t('TOTAL')}: {currency}{order.amount}
+          </p>
+        </div>
+        <div className="flex gap-2 items-center flex-wrap mt-2">
+          {order.items.slice(0, 4).map((item, index) => (
+            <img key={index} src={item.image[0]} className="w-12 h-12 rounded object-cover shadow-sm" alt="item" />
+          ))}
+          {order.items.length > 4 && (
+            <div className="w-12 h-12 rounded bg-gray-100 text-gray-500 flex items-center justify-center font-bold text-xs shadow-sm">
+              +{order.items.length - 4}
+            </div>
+          )}
+        </div>
+      </div>
+      
+      <div className="flex flex-col md:items-end justify-between gap-3">
+        <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 text-[#1E3A8A] rounded-full border border-blue-200">
+          <p className="min-w-2 h-2 rounded-full bg-yellow-500"></p>
+          <p className="text-sm font-semibold">{order.status}</p>
+        </div>
+        <Link
+          to={`/order/${order._id}`}
+          className="text-sm bg-[#1E3A8A] text-white px-5 py-2 rounded hover:bg-[#1E40AF] font-semibold text-center transition-colors"
+        >
+          {t('VIEW_DETAILS')}
+        </Link>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="border-t pt-16">
-      <div className="text-2xl">
-        <Title text1={"MY"} text2={"ORDERS"} />
+    <div className="border-t pt-10 min-h-[70vh]">
+      <div className="text-center mb-10">
+        <h2 className="text-3xl font-bold text-[#1E3A8A] mb-2">{t('MY_ORDERS')}</h2>
+        <p className="text-gray-600">{t('TRACK_AND_MANAGE')}</p>
       </div>
 
-      <div>
-        {orderData.map((item, index) => (
-          <div
-            key={index}
-            className="py-4 border-t border-b text-gray-700 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
-          >
-            <div className="flex items-start gap-6 text-sm">
-              <img className="w-16 sm:w-20" src={item.image[0]} alt="" />
-              <div>
-                <p className="sm:text-base font-medium">{item.name}</p>
-                <div className="flex items-center gap-3 mt-1 text-base text-gray-700">
-                  <p>
-                    {currency}
-                    {item.price}
-                  </p>
-                  <p>Quantity: {item.quantity}</p>
-                  <p>Size: {item.size}</p>
-                </div>
-                <p className="mt-1">
-                  Date:{" "}
-                  <span className="text-gray-400">
-                    {new Date(item.date).toDateString()}
-                  </span>
-                </p>
-                <p className="mt-1">
-                  Payment:{" "}
-                  <span className="text-gray-400">{item.paymentMethod}</span>
-                </p>
-              </div>
-            </div>
-            <div className="md:w-1/2 flex justify-between">
-              <div className="flex items-center gap-2">
-                <p className="min-w-2 h-2 rounded-full bg-green-500"></p>
-                <p className="text-sm md:text-base">{item.status}</p>
-              </div>
-              <button
-                onClick={loadorderData}
-                className="border px-4 py-2 text-sm font-medium rounded-sm"
-              >
-                Tack Order
-              </button>
-            </div>
-          </div>
-        ))}
+      <div className="max-w-4xl mx-auto">
+        
+        {/* Active Orders Section */}
+        <div className="mb-10">
+          <h3 className="text-xl font-bold text-green-600 mb-4 border-b pb-2">{t('ACTIVE_ORDERS')}</h3>
+          {activeOrders.length === 0 ? (
+            <p className="text-center text-gray-500 py-6">{t('NO_ACTIVE_ORDERS')}</p>
+          ) : (
+            activeOrders.map((order) => <OrderCard key={order._id} order={order} />)
+          )}
+        </div>
+
+        {/* Archived Orders Section */}
+        <div className="mb-10">
+          <h3 className="text-xl font-bold text-gray-500 mb-4 border-b pb-2">{t('ARCHIVED_ORDERS')}</h3>
+          {archivedOrders.length === 0 ? (
+            <p className="text-center text-gray-500 py-6">{t('NO_PAST_ORDERS')}</p>
+          ) : (
+            archivedOrders.map((order) => <OrderCard key={order._id} order={order} />)
+          )}
+        </div>
+
       </div>
     </div>
   );

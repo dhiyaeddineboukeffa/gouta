@@ -4,44 +4,24 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 const Login = () => {
-  const [currentState, setCurrentState] = useState("Login");
-  const { token, setToken, navigate, backendUrl } = useContext(ShopContext);
+  const { token, setToken, navigate, backendUrl, t } = useContext(ShopContext);
 
   const [name, setName] = useState("");
-  const [password, setPassword] = useState("");
-  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
 
   const onSubmitHandler = async (event) => {
     event.preventDefault();
-
     try {
-      if (currentState === "Sign Up") {
-        const response = await axios.post(backendUrl + "/api/user/register", {
-          name,
-          email,
-          password,
-        });
-        // console.log(response.data);
+      const response = await axios.post(backendUrl + "/api/user/enter", {
+        name,
+        phone,
+      });
 
-        if (response.data.success) {
-          setToken(response.data.token);
-          localStorage.setItem("token", response.data.token);
-        } else {
-          toast.error(response.data.message);
-        }
+      if (response.data.success) {
+        setToken(response.data.token);
+        localStorage.setItem("token", response.data.token);
       } else {
-        const response = await axios.post(backendUrl + "/api/user/login", {
-          email,
-          password,
-        });
-        // console.log(response.data);
-
-        if (response.data.success) {
-          setToken(response.data.token);
-          localStorage.setItem("token", response.data.token);
-        } else {
-          toast.error(response.data.message);
-        }
+        toast.error(response.data.message);
       }
     } catch (error) {
       console.log(error);
@@ -61,57 +41,30 @@ const Login = () => {
       className="flex flex-col items-center w-[90%] sm:max-w-96 m-auto mt-14 gap-4 text-gray-800"
     >
       <div className="inline-flex items-center gap-2 mb-2 mt-10">
-        <p className="prata-regular text-3xl">{currentState}</p>
-        <hr className="border-none h-[1.5px] w-8 bg-gray-800" />
+        <p className="prata-regular text-3xl">{t('WELCOME_TO_GOUTRA')}</p>
+        <hr className="border-none h-[1.5px] w-8 bg-[#1E3A8A]" />
       </div>
-      {currentState === "Login" ? (
-        ""
-      ) : (
-        <input
-          onChange={(e) => setName(e.target.value)}
-          value={name}
-          type="text"
-          className="w-full px-3 py-2 border border-gray-800"
-          placeholder="Name"
-          required
-        />
-      )}
+      <p className="text-center text-gray-500 mb-4">{t('ENTER_YOUR_DETAILS')}</p>
+      
       <input
-        onChange={(e) => setEmail(e.target.value)}
-        value={email}
-        type="email"
-        className="w-full px-3 py-2 border border-gray-800"
-        placeholder="Email"
+        onChange={(e) => setName(e.target.value)}
+        value={name}
+        type="text"
+        className="w-full px-3 py-3 border border-gray-300 rounded focus:outline-none focus:border-[#1E3A8A]"
+        placeholder={t('FULL_NAME')}
         required
       />
       <input
-        onChange={(e) => setPassword(e.target.value)}
-        value={password}
-        type="password"
-        className="w-full px-3 py-2 border border-gray-800"
-        placeholder="Password"
+        onChange={(e) => setPhone(e.target.value)}
+        value={phone}
+        type="tel"
+        className="w-full px-3 py-3 border border-gray-300 rounded focus:outline-none focus:border-[#1E3A8A]"
+        placeholder={t('PHONE_NUMBER')}
         required
       />
-      <div className="w-full flex justify-between text-sm mt-[-8px]">
-        <p className="cursor-pointer">Forgot your password?</p>
-        {currentState === "Login" ? (
-          <p
-            onClick={() => setCurrentState("Sign Up")}
-            className="cursor-pointer"
-          >
-            Create account
-          </p>
-        ) : (
-          <p
-            onClick={() => setCurrentState("Login")}
-            className="cursor-pointer"
-          >
-            Login Here
-          </p>
-        )}
-      </div>
-      <button className="bg-black text-white font-light px-8 py-2 mt-4">
-        {currentState === "Login" ? "Sign In" : "Sign Up"}
+      
+      <button className="w-full bg-[#1E3A8A] text-white font-semibold rounded px-8 py-3 mt-4 hover:bg-[#1E40AF] transition-colors">
+        {t('ENTER_APP')}
       </button>
     </form>
   );

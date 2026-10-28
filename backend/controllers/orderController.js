@@ -9,15 +9,29 @@ const deliveryCharge = 10;
 // gateway initialize
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
+import productModel from "../models/productModel.js";
+
 // Placing orders using COD Method
 const placeOrder = async (req, res) => {
   try {
     const { userId, items, amount, address } = req.body;
+    
+    // Fetch the user to get their defaults
+    const user = await userModel.findById(userId);
+
+    // address from frontend might contain optional name/phone. 
+    // We fall back to user's registered name/phone if left blank.
+    const finalAddress = {
+      name: address.name || user.name,
+      phone: address.phone || user.phone,
+      location: address.location,
+      transportation: address.transportation || "Self Pickup",
+    };
 
     const orderData = {
       userId,
       items,
-      address,
+      address: finalAddress,
       amount,
       paymentMethod: "COD",
       payment: false,
@@ -26,6 +40,13 @@ const placeOrder = async (req, res) => {
 
     const newOrder = new orderModel(orderData);
     await newOrder.save();
+
+    // Decrement stock for each item
+    for (const item of items) {
+      await productModel.findByIdAndUpdate(item._id, {
+        $inc: { stockQuantity: -item.quantity }
+      });
+    }
 
     await userModel.findByIdAndUpdate(userId, { cartData: {} });
 
